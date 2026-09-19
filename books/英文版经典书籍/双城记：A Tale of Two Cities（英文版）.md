@@ -10,9 +10,9 @@ incredulity
 
 revelations
 
-burglaries 
+burglaries
 
-highwayman 
+highwayman
 
 ammunition;
 
@@ -20,7 +20,7 @@ illustrious
 
 blunderbusses
 
-contraband 
+contraband
 
 requisition
 
@@ -44,7 +44,7 @@ Awonderful fact to reflect upon, that every human creature is constituted to be 
 
 lamentation
 
- bewildered,
+bewildered,
 
 ### CHAPTER 4 THE PREPARATION
 
@@ -56,7 +56,7 @@ restoratives
 
 ### CHAPTER 5 THE WINE-SHOP
 
- besmirched
+besmirched
 
 It was prevalent everywhere. Hunger was pushed out of the tall houses, in the wretched clothing that hung upon poles and lines; Hunger was patched into them with straw and rag and wood and paper; Hunger was repeated in every fragment of the small modicum of firewood that the man sawed off; Hunger stared down from the smokeless chimneys, and started up from the filthy street that had no offal, among its refuse, of anything to eat. Hunger was the inscription on the baker's shelves, written in every small loaf of his scanty stock of bad bread; at the sausage-shop, in every dead-dog preparation that was offered for sale. Hunger rattled its dry bones among the roasting chestnuts in the turned cylinder; Hunger was shred into atomies in every farthing porringer of husky chips of potato, fried with some reluctant drops of oil.
 

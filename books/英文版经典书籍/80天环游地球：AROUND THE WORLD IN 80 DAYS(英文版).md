@@ -12,7 +12,7 @@ Ecclesiastical
 
 deliberations
 
-pernicious 
+pernicious
 
 avaricious;
 

@@ -18,7 +18,7 @@ honourable,
 
 imploringly
 
- shillings, 
+shillings,
 
 threateningly
 
@@ -48,13 +48,13 @@ revelation.
 
 ### CHAPTER 2 THE SHADOW
 
-totting up 
+totting up
 
 uneventfully
 
 recollections
 
-vindictive 
+vindictive
 
 entreatingly
 

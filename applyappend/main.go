@@ -1,60 +1,24 @@
+// applyappend 命令行工具：把补全批次文件（===FILE: 分隔格式）追加进对应笔记。
+// 核心逻辑在 bookapply 包（同样被 weread-server 数据更新流程复用），已补全的笔记自动跳过。
+// 用法（项目根目录）: go run .\applyappend supplement\batch01.md
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"strings"
+
+	"github.com/qianyuniao/Book-List-Note-System/bookapply"
 )
 
-// apply 读取批次文件（格式：===FILE: 相对路径 分隔），把正文追加到对应笔记末尾
-// 用法: go run .\applyappend batch01.md
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("usage: applyappend <batchfile>")
 		os.Exit(1)
 	}
-	data, err := os.ReadFile(os.Args[1])
+	applied, skipped, err := bookapply.ApplyBatch(".", os.Args[1])
 	if err != nil {
-		fmt.Println("read batch:", err)
+		fmt.Println(err)
 		os.Exit(1)
-	}
-	parts := strings.Split(string(data), "===FILE:")
-	applied, skipped := 0, 0
-	for _, p := range parts[1:] {
-		lines := strings.SplitN(strings.TrimPrefix(p, "\n"), "\n", 2)
-		path := strings.TrimSpace(lines[0])
-		body := ""
-		if len(lines) > 1 {
-			body = lines[1]
-		}
-		if path == "" || body == "" {
-			continue
-		}
-		if _, e := os.Stat(path); e != nil {
-			fmt.Println("MISSING:", path)
-			skipped++
-			continue
-		}
-		f, e := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0644)
-		if e != nil {
-			fmt.Println("OPEN ERR:", path, e)
-			skipped++
-			continue
-		}
-		// 确保以空行分隔原内容与新正文
-		r := bufio.NewReader(strings.NewReader(body))
-		first, _ := r.ReadString('\n')
-		if !strings.HasPrefix(first, "### ") {
-			f.WriteString("\n")
-		}
-		f.WriteString(body)
-		if !strings.HasSuffix(body, "\n") {
-			f.WriteString("\n")
-		}
-		f.Close()
-		applied++
-		fmt.Println("OK:", path)
 	}
 	fmt.Printf("applied=%d skipped=%d\n", applied, skipped)
 }

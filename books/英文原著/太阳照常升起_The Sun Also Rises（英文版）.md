@@ -96,7 +96,7 @@ illuminated
 
 I suppose she only wanted what she couldn't have.
 
-I lay awake thinking and my mind jumping around. 
+I lay awake thinking and my mind jumping around.
 
 Don't be cross
 
@@ -142,9 +142,9 @@ live by the sword shall perish by the sword.
 
 earthenware
 
-Joke people and you make enemies. 
+Joke people and you make enemies.
 
-it is because I have lived very much that now I can enjoy everything so well. 
+it is because I have lived very much that now I can enjoy everything so well.
 
 ostentatious
 
@@ -154,9 +154,9 @@ I had the feeling as in a nightmare of it all being something repeated, somethin
 
 ### BOOK II
 
-theatrical 
+theatrical
 
- Road to hell paved with unbought stuffed dogs. 
+Road to hell paved with unbought stuffed dogs.
 
 pestilential
 
@@ -172,7 +172,7 @@ nearsighted.
 
 ### CHAPTER 10
 
-It was hot, but the town had a cool, fresh, early-morning smell and it was pleasant sitting in the café. A breeze started to blow, and you could feel that the air came from the sea. 
+It was hot, but the town had a cool, fresh, early-morning smell and it was pleasant sitting in the café. A breeze started to blow, and you could feel that the air came from the sea.
 
 Why I felt that impulse to devil him I do not know. Of course I do know. I was blind, unforgivingly jealous of what had happened to him.
 
@@ -202,7 +202,7 @@ perfunctorily
 
 show a little breeding
 
-“We're none of us sober, ” 
+“We're none of us sober, ”
 
 There was much wine, an ignored tension, and a feeling of things coming that you could not prevent happening.
 
@@ -234,4 +234,4 @@ eavesdropper
 
 Everything is on such a clear financial basis in France. It is the simplest country to live in. No one makes things complicated by becoming your friend for any obscure reason. If you want people to like you you have only to spend a little money.
 
-Send a girl off with one man. Introduce her to another to go off with him. Now go and bring her back. And sign the wire with love. 
+Send a girl off with one man. Introduce her to another to go off with him. Now go and bring her back. And sign the wire with love.

@@ -1,4 +1,4 @@
-## Wives and Daughters（I） 妻子与女儿-锦绣佳人（英文版）
+## Wives and Daughters（I） 妻子与女儿/锦绣佳人（英文版）
 
 E.C. Gaskell  -  原版书榜-英文原版
 

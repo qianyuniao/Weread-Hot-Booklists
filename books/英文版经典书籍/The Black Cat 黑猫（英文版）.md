@@ -18,9 +18,9 @@ thenceforward to despair.
 
 compartment
 
- plastering
+plastering
 
- apparition
+apparition
 
 ### 
 
@@ -40,7 +40,7 @@ cutting the corpse into minute fragments,
 
 merchandise
 
-The wall did not present the slightest appearance of having been disturbed. 
+The wall did not present the slightest appearance of having been disturbed.
 
 triumphantly
 

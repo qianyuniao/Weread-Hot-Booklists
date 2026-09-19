@@ -10,6 +10,8 @@
 //	POST /api/delete {list,title}           删除书籍笔记
 //	POST /api/rename {list,title,newTitle}  重命名笔记文件
 //	POST /api/import multipart{list,file}   导入外部文件（md/txt/html/docx/epub/pdf/json/csv）
+//	POST /api/update                      启动数据更新（后台爬取 + 自动重放 supplement 补全）
+//	GET  /api/update/status               数据更新进度（前端轮询）
 package main
 
 import (
@@ -26,7 +28,11 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/qianyuniao/Book-List-Note-System/bookapply"
+	"github.com/qianyuniao/Book-List-Note-System/scraper"
 )
 
 //go:embed index.html
@@ -339,6 +345,87 @@ func handleRename(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]string{"ok": "true", "title": newTitle})
 }
 
+// ---------- 数据更新任务（爬取 + 重放补全） ----------
+
+type updateJob struct {
+	Active  bool   `json:"active"`
+	Phase   string `json:"phase"` // scrape / apply / done / error
+	Error   string `json:"error,omitempty"`
+	Applied int    `json:"applied"`
+	Batches int    `json:"batches"`
+}
+
+var (
+	updateMu  sync.Mutex
+	updateCur updateJob
+)
+
+// handleUpdate 启动后台数据更新：先跑爬虫（temp 缓存命中则离线完成），完成后自动重放补全批次
+func handleUpdate(w http.ResponseWriter, r *http.Request) {
+	updateMu.Lock()
+	if updateCur.Active {
+		updateMu.Unlock()
+		writeErr(w, http.StatusConflict, "数据更新已在进行中")
+		return
+	}
+	updateCur = updateJob{Active: true, Phase: "scrape"}
+	updateMu.Unlock()
+	go runUpdate()
+	writeJSON(w, map[string]string{"ok": "true"})
+}
+
+func runUpdate() {
+	fail := func(msg string) {
+		updateMu.Lock()
+		updateCur.Active = false
+		updateCur.Phase = "error"
+		updateCur.Error = msg
+		updateMu.Unlock()
+	}
+	defer func() {
+		if rec := recover(); rec != nil { // 双保险：防意外 panic 击穿服务进程
+			fail(fmt.Sprintf("%v", rec))
+		}
+	}()
+	if err := scraper.Run("."); err != nil {
+		fail(err.Error())
+		return
+	}
+	updateMu.Lock()
+	updateCur.Phase = "apply"
+	updateMu.Unlock()
+	files, _ := filepath.Glob("supplement/batch*.md")
+	sort.Strings(files)
+	total := 0
+	for _, f := range files {
+		a, _, e := bookapply.ApplyBatch(".", f)
+		if e == nil {
+			total += a
+		}
+	}
+	updateMu.Lock()
+	updateCur.Active = false
+	updateCur.Phase = "done"
+	updateCur.Applied = total
+	updateCur.Batches = len(files)
+	updateMu.Unlock()
+}
+
+// handleUpdateStatus 返回任务总状态 + 爬虫细粒度进度
+func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
+	updateMu.Lock()
+	cur := updateCur
+	updateMu.Unlock()
+	writeJSON(w, map[string]interface{}{
+		"active":   cur.Active,
+		"phase":    cur.Phase,
+		"error":    cur.Error,
+		"applied":  cur.Applied,
+		"batches":  cur.Batches,
+		"progress": scraper.Snapshot(),
+	})
+}
+
 // ---------- 应用窗口 ----------
 
 // openAppWindow 以 Edge（回退 Chrome）应用模式打开独立窗口，
@@ -404,6 +491,8 @@ func main() {
 	mux.HandleFunc("/api/delete", handleDelete)
 	mux.HandleFunc("/api/rename", handleRename)
 	mux.HandleFunc("/api/import", handleImport)
+	mux.HandleFunc("/api/update", handleUpdate)
+	mux.HandleFunc("/api/update/status", handleUpdateStatus)
 	mux.HandleFunc("/api/window", handleWindow)
 	mux.HandleFunc("/logo.png", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/png")

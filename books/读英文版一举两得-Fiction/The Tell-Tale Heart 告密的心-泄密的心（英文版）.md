@@ -1,4 +1,4 @@
-## The Tell-Tale Heart 告密的心-泄密的心（英文版）
+## The Tell-Tale Heart 告密的心/泄密的心（英文版）
 
 Allan Poe  -  原版书榜-英文原版
 

@@ -16,9 +16,9 @@ dispositions
 
 prosperous.
 
- immoderate 
+immoderate
 
-inclined to 
+inclined to
 
 Tolgo phonac
 
@@ -94,7 +94,7 @@ concupiscence
 
 traitorously
 
- inundation 
+inundation
 
 ### CHAPTER 8
 

@@ -262,6 +262,7 @@
     <div class="dropdown">
       <button class="mi" data-act="refresh"><span data-i18n="miRefresh">重新扫描数据</span><span class="kbd">F5</span></button>
 <button class="mi" data-act="import"><span data-i18n="miImport">导入文件…</span><span class="kbd">Ctrl+O</span></button>
+<button class="mi" data-act="update"><span data-i18n="miUpdate">更新数据（重新爬取）…</span></button>
       <div class="msep"></div>
       <button class="mi" data-act="close"><span data-i18n="miExit">退出系统</span><span class="kbd">Alt+F4</span></button>
     </div>
@@ -460,6 +461,9 @@ const I18N = {
     exported:n=>'已导出：'+n, exportFail:'导出失败：', pdfHint:'请在打印对话框中将目标打印机选为“另存为 PDF”', popupBlock:'（弹窗被拦截，请允许弹出窗口）',
     ctxRestore:n=>'↺ 恢复已删除的内置分类（'+n+'）', ctxRestoreQ:n=>'恢复全部 '+n+' 个已删除的内置分类？', ctxRestoreOk:'已恢复内置分类',
     miImport:'导入文件…', importing:'导入中…', importOk:n=>'已导入《'+n+'》', importFail:'导入失败：', importPick:'请先在左侧选择目标书单，再导入文件',
+    miUpdate:'更新数据（重新爬取）…', updateQ:'更新数据？将重新抓取微信读书书单（temp 缓存命中时离线完成，缺失时需 cookie.txt），完成后自动重放补全内容。',
+    updateStarted:'已启动数据更新，请稍候', updating:'数据更新中', updScrape:'抓取书单', updApply:'重放补全', updBooks:'本',
+    updateDone:n=>'数据更新完成，重放补全 '+n+' 篇', updateFail:'启动更新失败：', updateErr:'数据更新失败：',
     keysTitle:'键盘快捷键说明',
     keysBody:'<div><span class="k">Ctrl+S</span>保存当前编辑</div><div><span class="k">Ctrl+E</span>编辑当前书籍</div><div><span class="k">Ctrl+O</span>导入文件到当前书单</div><div><span class="k">Esc</span>关闭菜单 / 弹窗</div><div><span class="k">F5</span>重新扫描数据</div><div><span class="k">F11</span>全屏切换</div>',
     aboutTitle:'关于 书单笔记系统',
@@ -495,6 +499,9 @@ const I18N = {
     exported:n=>'Exported: '+n, exportFail:'Export failed: ', pdfHint:'Choose “Save as PDF” as the printer in the dialog', popupBlock:'(popup was blocked, please allow popups)',
     ctxRestore:n=>'↺ Restore deleted ('+n+')', ctxRestoreQ:n=>'Restore all '+n+' deleted built-in categories?', ctxRestoreOk:'Built-in categories restored',
     miImport:'Import File…', importing:'Importing…', importOk:n=>'Imported «'+n+'»', importFail:'Import failed: ', importPick:'Select a target booklist first, then import',
+    miUpdate:'Refresh Data (re-scrape)…', updateQ:'Refresh data now? It re- scrapes booklists (offline when temp/ cache hits, needs cookie.txt otherwise), then auto-replays supplements.',
+    updateStarted:'Data update started', updating:'Updating data', updScrape:'scraping', updApply:'replaying supplements', updBooks:'books',
+    updateDone:n=>'Update done, replayed '+n+' supplements', updateFail:'Start failed: ', updateErr:'Update failed: ',
     keysTitle:'Keyboard Shortcuts',
     keysBody:'<div><span class="k">Ctrl+S</span>Save current edit</div><div><span class="k">Ctrl+E</span>Edit current book</div><div><span class="k">Ctrl+O</span>Import file into current list</div><div><span class="k">Esc</span>Close menu / dialog</div><div><span class="k">F5</span>Rescan data</div><div><span class="k">F11</span>Toggle fullscreen</div>',
     aboutTitle:'About Book Notes',
@@ -1007,6 +1014,39 @@ async function refreshAll() {
   toast(t('refreshed'));
 }
 
+// ---------- 数据更新（后台爬取 + 自动重放补全） ----------
+let updTimer = null;
+async function startUpdate() {
+  if (!confirm(t('updateQ'))) return;
+  try {
+    await api('/api/update', { go: 1 });
+    toast(t('updateStarted'));
+    updTick();
+    updTimer = setInterval(updTick, 2000);
+  } catch (e) { toast(t('updateFail') + e.message); }
+}
+async function updTick() {
+  let s;
+  try { s = await api('/api/update/status'); } catch (e) { return; } // 瞬时网络抖动忽略，等下一轮
+  const p = s.progress || {};
+  if (s.active) {
+    const phase = s.phase === 'apply' ? t('updApply') : t('updScrape');
+    status(t('updating') + ' · ' + phase + (p.listsTotal ? ' ' + p.listsDone + '/' + p.listsTotal : '') + ' · ' + (p.booksDone || 0) + ' ' + t('updBooks'));
+    return;
+  }
+  clearInterval(updTimer); updTimer = null;
+  status(t('statusReady'));
+  if (s.phase === 'error') { toast(t('updateErr') + (s.error || '')); return; }
+  await loadLists();
+  if (curList) {
+    await loadBooks(curList);
+    renderLists($('search').value);
+    if (curBook && books.some(b => b.title === curBook)) showContent(curList, curBook);
+    else { curBook = null; placeholder(t('emptyPick')); }
+  }
+  toast(t('updateDone')(s.applied || 0));
+}
+
 // ---------- 事件绑定 ----------
 $('search').addEventListener('input', e => renderLists(e.target.value));
 $('catBtn').addEventListener('click', e => {
@@ -1054,6 +1094,7 @@ function menuAct(act) {
   switch (act) {
     case 'refresh': refreshAll(); break;
     case 'import': importFile(); break;
+    case 'update': startUpdate(); break;
     case 'close': api('/api/window', { op: 'close' }).catch(() => toast(t('winCloseFail'))); window.close(); break;
     case 'edit': if (guardDiscard()) enterEdit(); break;
     case 'save': saveEdit(); break;
