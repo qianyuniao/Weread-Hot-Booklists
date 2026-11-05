@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/qianyuniao/Book-List-Note-System/bookapply"
+	"github.com/qianyuniao/Weread-Hot-Booklists/bookapply"
 )
 
 func main() {

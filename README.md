@@ -1,7 +1,8 @@
-# weread-hot-booklists
+# Weread Hot Booklists
 
 热门收藏书单工具集：Go 爬虫生成书单划线笔记归档 + 本地 Web/桌面浏览器（Go 单语言，零第三方依赖）。
 
+- **作者**：qianyuniao（[https://github.com/qianyuniao](https://github.com/qianyuniao)）
 - **技术栈**：Go 1.16+（纯标准库、零第三方依赖，前端页面 go:embed 内置）
 - **上游数据项目**：`github.com/able8/weread-hot-booklists`（Star 785 / Fork 261）
 

@@ -31,8 +31,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/qianyuniao/Book-List-Note-System/bookapply"
-	"github.com/qianyuniao/Book-List-Note-System/scraper"
+	"github.com/qianyuniao/Weread-Hot-Booklists/bookapply"
+	"github.com/qianyuniao/Weread-Hot-Booklists/scraper"
 )
 
 //go:embed index.html
@@ -505,7 +505,7 @@ func main() {
 		log.Fatalf("监听 %s 失败（端口被占用？）: %v", *addr, err)
 	}
 	url := fmt.Sprintf("http://localhost:%d", ln.Addr().(*net.TCPAddr).Port)
-	log.Println("书单笔记系统已启动:", url)
+	log.Println("Weread Hot Booklists 已启动:", url)
 
 	go func() { log.Fatal(http.Serve(ln, mux)) }()
 	if !*noBrowser {

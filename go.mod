@@ -1,3 +1,3 @@
 
-module github.com/qianyuniao/Book-List-Note-System
+module github.com/qianyuniao/Weread-Hot-Booklists
 go 1.16

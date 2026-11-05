@@ -25,7 +25,7 @@ const (
 	swMaximize = 3
 	swRestore  = 9
 	wmClose    = 0x0010
-	appTitle   = "书单笔记系统"
+	appTitle   = "Weread Hot Booklists"
 )
 
 func winString(proc *syscall.LazyProc, hwnd uintptr) string {
