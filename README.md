@@ -95,8 +95,7 @@ go run ./cmd/scraper           # 必须在项目根目录运行（构建方式�
 
 - **缓存模式**（默认）：`temp/` 命中时约 3 秒离线完成。
   ⚠️ 重抓会重写 `books/` 下全部笔记，**手工补全的简介/观点/金句章节会被覆盖**，请谨慎执行。
-- **实时抓取**：复制 `cookie.txt.example` 为 `cookie.txt`，填入浏览器抓取的登录 Cookie
-  （单行 `Cookie: wr_vid=...; wr_srkey=...`，**末尾不能有多余换行**），再按需删除对应缓存：
+- **实时抓取**：在应用内「设置 → 登录凭证」点「微信扫码获取凭证」，手机微信扫码确认后自动写入本地 `cookie.txt`（已排除出 Git；不支持扫码时也可手动粘贴浏览器 Cookie），再按需删除对应缓存：
 
 | 刷新范围 | 删除的缓存 |
 | :--- | :--- |
@@ -116,6 +115,8 @@ go run ./cmd/scraper           # 必须在项目根目录运行（构建方式�
 - `POST /api/delete` `{list,title}` — 删除书籍笔记
 - `POST /api/rename` `{list,title,newTitle}` — 重命名笔记（同步正文标题行，非法字符过滤、同名拒绝）
 - `POST /api/import` multipart `{list,file}` — 导入外部文件转为笔记（md/txt/html/docx/epub/pdf/json/csv）
+- `GET/POST/DELETE /api/cookie` — 登录凭证配置（查询状态 / 保存 / 清除，写入本地 cookie.txt）
+- `POST /api/cookie/qr` · `GET /api/cookie/qr/status` · `POST /api/cookie/qr/otp` — 微信扫码登录（复刻网页版协议，成功后自动写入 cookie.txt）
 
 所有写接口均带路径穿越防护（结果必须落在 books/ 内）。
 

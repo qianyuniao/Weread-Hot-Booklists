@@ -12,6 +12,12 @@
 //	POST /api/import multipart{list,file}   导入外部文件（md/txt/html/docx/epub/pdf/json/csv）
 //	POST /api/update                      启动数据更新（后台爬取 + 自动重放 supplement 补全）
 //	GET  /api/update/status               数据更新进度（前端轮询）
+//	GET  /api/cookie                      查询登录凭证状态（是否已配置 + 最后更新时间）
+//	POST /api/cookie    {cookie}           保存登录凭证到 cookie.txt
+//	DELETE /api/cookie                    清除登录凭证（删除 cookie.txt）
+//	POST /api/cookie/qr                   创建微信扫码登录会话，返回二维码内容
+//	GET  /api/cookie/qr/status            查询扫码状态（waiting/otp/success/expired）
+//	POST /api/cookie/qr/otp {otp}          提交扫码后所需的 4 位验证码
 package main
 
 import (
@@ -345,6 +351,77 @@ func handleRename(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]string{"ok": "true", "title": newTitle})
 }
 
+// ---------- 登录凭证（cookie.txt）管理 ----------
+
+// normalizeCookie 校验并规范化凭证文本：
+// 允许带或不带 "Cookie: " 前缀，统一输出以 "Cookie: " 开头的单行文本（无结尾换行）。
+func normalizeCookie(s string) (string, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return "", fmt.Errorf("凭证内容不能为空")
+	}
+	s = strings.TrimPrefix(s, "Cookie:")
+	s = strings.TrimPrefix(s, "cookie:")
+	s = strings.TrimSpace(s)
+	if !strings.Contains(s, "=") {
+		return "", fmt.Errorf("凭证格式不正确，应为形如「wr_vid=...; wr_srkey=...」的 Cookie 文本")
+	}
+	s = strings.ReplaceAll(s, "\r", "")
+	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.Join(strings.Fields(s), " ")
+	return "Cookie: " + s, nil
+}
+
+// handleCookieStatus 查询凭证配置状态（不回传凭证本体，只报是否已配置）
+func handleCookieStatus(w http.ResponseWriter, r *http.Request) {
+	fi, err := os.Stat("cookie.txt")
+	if err != nil {
+		writeJSON(w, map[string]interface{}{"configured": false})
+		return
+	}
+	writeJSON(w, map[string]interface{}{
+		"configured": true,
+		"updatedAt":  fi.ModTime().Format("2006-01-02 15:04"),
+	})
+}
+
+// handleCookieSave 保存凭证（覆盖写入 cookie.txt）
+func handleCookieSave(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeErr(w, http.StatusMethodNotAllowed, "仅支持 POST")
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
+	var req struct {
+		Cookie string `json:"cookie"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErr(w, http.StatusBadRequest, "请求体不是合法 JSON")
+		return
+	}
+	normalized, err := normalizeCookie(req.Cookie)
+	if err != nil {
+		writeErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := os.WriteFile("cookie.txt", []byte(normalized), 0600); err != nil {
+		writeErr(w, http.StatusInternalServerError, "写入 cookie.txt 失败: "+err.Error())
+		return
+	}
+	log.Println("登录凭证已通过设置界面更新")
+	writeJSON(w, map[string]interface{}{"ok": true, "updatedAt": time.Now().Format("2006-01-02 15:04")})
+}
+
+// handleCookieClear 删除凭证文件（幂等）
+func handleCookieClear(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		writeErr(w, http.StatusMethodNotAllowed, "仅支持 DELETE")
+		return
+	}
+	os.Remove("cookie.txt")
+	writeJSON(w, map[string]bool{"ok": true})
+}
+
 // ---------- 数据更新任务（爬取 + 重放补全） ----------
 
 type updateJob struct {
@@ -494,6 +571,21 @@ func main() {
 	mux.HandleFunc("/api/update", handleUpdate)
 	mux.HandleFunc("/api/update/status", handleUpdateStatus)
 	mux.HandleFunc("/api/window", handleWindow)
+	mux.HandleFunc("/api/cookie", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			handleCookieStatus(w, r)
+		case http.MethodPost:
+			handleCookieSave(w, r)
+		case http.MethodDelete:
+			handleCookieClear(w, r)
+		default:
+			writeErr(w, http.StatusMethodNotAllowed, "仅支持 GET / POST / DELETE")
+		}
+	})
+	mux.HandleFunc("/api/cookie/qr", handleQRStart)
+	mux.HandleFunc("/api/cookie/qr/status", handleQRStatus)
+	mux.HandleFunc("/api/cookie/qr/otp", handleQROtp)
 	mux.HandleFunc("/logo.png", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/png")
 		w.Header().Set("Cache-Control", "no-store")

@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="/logo.png">
 <link rel="shortcut icon" type="image/png" href="/logo.png">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" onerror="window.__noMarked=1"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" onerror="window.__noQR=1"></script>
 <style>
   /* ---------- 设计令牌 ----------
      铬层（菜单栏/侧栏/书籍栏/状态栏）恒定深色，两主题不变；
@@ -273,6 +274,8 @@
           <button class="mi" data-act="theme-night" id="miThemeNight">☾ 黑夜</button>
         </div>
       </div>
+      <div class="msep"></div>
+      <button class="mi" data-act="cookie"><span data-i18n="miCookie">登录凭证…</span></button>
     </div>
   </div>
   <div class="menu"><span data-i18n="mHelp">帮助(H)</span>
@@ -355,6 +358,38 @@
   </div>
 </div>
 
+<div class="mask" id="cookieMask">
+  <div class="modal" style="width:560px">
+    <h3 data-i18n="cookieTitle">登录凭证（实时抓取用）</h3>
+    <div id="cookieStatus" style="font-size:12.5px;color:var(--ink-2);margin-bottom:4px"></div>
+    <div data-i18n="cookieHint" style="font-size:12.5px;color:var(--ink-2);line-height:1.8;margin:8px 0 12px"></div>
+
+    <!-- 方式一：微信扫码（推荐） -->
+    <div style="text-align:center">
+      <button class="btn primary" id="btnQrShow" data-i18n="qrBtn">微信扫码获取凭证</button>
+      <div id="qrArea" style="display:none;margin-top:12px">
+        <div id="qrImg" style="display:inline-block;background:#fff;padding:10px;border-radius:12px;border:1px solid var(--line)"></div>
+        <div id="qrMsg" style="font-size:12.5px;color:var(--ink-2);margin-top:8px;line-height:1.7"></div>
+        <div id="otpRow" style="display:none;margin-top:8px;align-items:center;justify-content:center;gap:6px">
+          <input id="otpBox" maxlength="4" inputmode="numeric" style="width:110px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;text-align:center;letter-spacing:4px;outline:none;background:var(--surface);color:var(--ink)">
+          <button class="btn primary" id="btnOtpOk" data-i18n="qrOtpOk">确认</button>
+        </div>
+        <button class="btn" id="btnQrRetry" style="display:none;margin-top:10px" data-i18n="qrRetry">重新生成二维码</button>
+      </div>
+    </div>
+
+    <!-- 方式二：手动粘贴 -->
+    <div data-i18n="cookieManual" style="font-size:12px;color:var(--ink-2);margin:14px 0 6px">或手动粘贴 Cookie（浏览器 F12 → 网络请求标头中复制整行）：</div>
+    <textarea id="cookieBox" spellcheck="false" style="width:100%;height:80px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font:12px/1.6 Consolas,monospace;outline:none;background:var(--surface);color:var(--ink);resize:none"></textarea>
+    <div class="ops" style="display:flex;align-items:center">
+      <button class="btn" id="btnCookieClear" data-i18n="cookieClear" style="color:#c0392b">清除凭证</button>
+      <span style="flex:1"></span>
+      <button class="btn" id="btnCookieCancel" data-i18n="addCancel">取消</button>
+      <button class="btn primary" id="btnCookieSave" data-i18n="cookieSave">保存凭证</button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="fileImport" style="display:none" accept=".md,.markdown,.txt,.text,.log,.html,.htm,.docx,.epub,.pdf,.json,.csv,.tsv">
 <div class="ctxmenu" id="ctxMenu"></div>
 <div class="toast" id="toast"></div>
@@ -409,7 +444,7 @@ const I18N = {
     mFile:'文件(F)', mEdit:'编辑(E)', mView:'查看(V)', mSettings:'设置(S)', mHelp:'帮助(H)',
     miRefresh:'重新扫描数据', miExit:'退出系统', miEditBook:'编辑当前书籍', miSave:'保存修改', miCancelEdit:'取消编辑',
     miAdd:'添加书籍…', miDel:'删除书籍', miAddBtn:'添加书籍到当前书单', miReadMode:'阅读模式', miEditMode:'编辑模式', miFull:'全屏 / 退出全屏',
-    miLang:'语言', miTheme:'主题', miKeys:'键盘快捷键说明', miAbout:'关于 Weread Hot Booklists',
+    miLang:'语言', miTheme:'主题', miKeys:'键盘快捷键说明', miAbout:'关于 Weread Hot Booklists', miCookie:'登录凭证…',
     btnRefresh:'⟳ 刷新', searchPh:'搜索书单…', catFilter:'按分类筛选', dragHint:'拖动调整列宽',
     bookListHead:'书籍列表', emptyPick:'← 请选择书单',
     welcome:'欢迎使用<br>请先在左侧选择书单，再在中间选择书籍查看热门划线笔记<br><br>⌂ 阅读 · ✎ 编辑（Ctrl+S）· ✚ 添加 · ✕ 删除<br>列边界可左右拖拽调整宽度',
@@ -417,6 +452,16 @@ const I18N = {
     statusRight:'数据来自本地 books/ 目录 · 端口 8327',
     addTitleTo:'添加书籍到', fTitle:'书名（必填）', fAuthor:'作者', fIntro:'简介', addOk:'创建并编辑', addCancel:'取消',
     langZh:'中文', langEn:'English', themeDay:'☀ 白天', themeNight:'☾ 黑夜',
+    cookieTitle:'登录凭证（实时抓取用）',
+    cookieHint:'实时抓取微信读书书单需要登录凭证，仅存于本地 cookie.txt（已被 .gitignore 排除，不会上传）。推荐微信扫码自动获取；缓存命中时无需配置。',
+    cookieSave:'保存凭证', cookieClear:'清除凭证',
+    cookieOn:d=>'✓ 已配置 · 更新于 '+d, cookieOff:'未配置（缓存命中时可正常更新数据）',
+    cookieSaved:d=>'凭证已保存（'+d+'）', cookieCleared:'凭证已清除', cookieSaveFail:'保存失败：', cookieClearQ:'确定清除已保存的登录凭证？',
+    cookieManual:'或手动粘贴 Cookie（浏览器 F12 → 网络请求标头中复制整行）：',
+    qrBtn:'微信扫码获取凭证', qrWaiting:'二维码已生成：请用微信扫码，并在手机上确认登录',
+    qrOtp:'扫码后需要验证：请输入手机上显示的 4 位验证码', qrOtpOk:'确认',
+    qrSuccess:'扫码登录成功，凭证已自动保存', qrExpired:'二维码已过期或已失败，请重新生成',
+    qrRetry:'重新生成二维码', qrNoLib:'二维码组件加载失败（需联网），请使用下方手动粘贴',
     stats:(a,b)=>a+' 个书单 · '+b+' 篇书籍笔记', bookHead:n=>'书籍列表 · '+n+' 本',
     loading:'加载中…', noNotes:'该书单暂无笔记文件', listPicked:n=>'已选书单「'+n+'」，从中间列表选择书籍查看划线笔记',
     pickEdit:'请先在中间列表选择要编辑的书籍', editPrefix:'编辑：',
@@ -447,7 +492,7 @@ const I18N = {
     mFile:'File(F)', mEdit:'Edit(E)', mView:'View(V)', mSettings:'Settings(S)', mHelp:'Help(H)',
     miRefresh:'Rescan Data', miExit:'Exit', miEditBook:'Edit Current Book', miSave:'Save Changes', miCancelEdit:'Cancel Editing',
     miAdd:'Add Book…', miDel:'Delete Book', miAddBtn:'Add a book to current list', miReadMode:'Read Mode', miEditMode:'Edit Mode', miFull:'Fullscreen / Exit Fullscreen',
-    miLang:'Language', miTheme:'Theme', miKeys:'Keyboard Shortcuts', miAbout:'About Weread Hot Booklists',
+    miLang:'Language', miTheme:'Theme', miKeys:'Keyboard Shortcuts', miAbout:'About Weread Hot Booklists', miCookie:'Login Credential…',
     btnRefresh:'⟳ Refresh', searchPh:'Search booklists…', catFilter:'Filter by category', dragHint:'Drag to resize column',
     bookListHead:'Book List', emptyPick:'← Pick a booklist',
     welcome:'Welcome<br>Pick a booklist on the left, then a book in the middle panel to view highlights<br><br>⌂ Read · ✎ Edit (Ctrl+S) · ✚ Add · ✕ Delete<br>Drag column borders to resize',
@@ -455,6 +500,16 @@ const I18N = {
     statusRight:'Data from local books/ folder · port 8327',
     addTitleTo:'Add book to', fTitle:'Title (required)', fAuthor:'Author', fIntro:'Intro', addOk:'Create & Edit', addCancel:'Cancel',
     langZh:'中文', langEn:'English', themeDay:'☀ Day', themeNight:'☾ Night',
+    cookieTitle:'Login Credential (for live scraping)',
+    cookieHint:'Live scraping of WeRead booklists requires a login credential, stored only in local cookie.txt (excluded by .gitignore, never uploaded). WeChat QR scan is recommended; not needed when temp/ cache hits.',
+    cookieSave:'Save Credential', cookieClear:'Clear Credential',
+    cookieOn:d=>'✓ Configured · updated '+d, cookieOff:'Not configured (data refresh works offline when cache hits)',
+    cookieSaved:d=>'Credential saved ('+d+')', cookieCleared:'Credential cleared', cookieSaveFail:'Save failed: ', cookieClearQ:'Clear the saved login credential?',
+    cookieManual:'Or paste Cookie manually (copy the full line from F12 → Network request headers):',
+    qrBtn:'Get via WeChat QR', qrWaiting:'QR ready: scan with WeChat, then confirm login on your phone',
+    qrOtp:'Verification needed: enter the 4-digit code shown on your phone', qrOtpOk:'Confirm',
+    qrSuccess:'QR login succeeded, credential saved', qrExpired:'QR code expired or failed, please regenerate',
+    qrRetry:'Regenerate QR Code', qrNoLib:'QR library failed to load (offline?), use manual paste below',
     stats:(a,b)=>a+' lists · '+b+' book notes', bookHead:n=>'Book List · '+n,
     loading:'Loading…', noNotes:'No notes in this list yet', listPicked:n=>'List «'+n+'» selected — pick a book in the middle panel',
     pickEdit:'Select a book to edit first', editPrefix:'Edit: ',
@@ -1041,6 +1096,105 @@ $('btnAddOk').onclick = doAdd;
 $('btnAddCancel').onclick = () => $('addMask').classList.remove('show');
 $('btnRefreshTop').onclick = refreshAll;
 $('editBox').addEventListener('input', () => { dirty = true; });
+// ---------- 登录凭证（cookie.txt）配置弹窗 ----------
+let qrTimer = null;
+function resetQrArea() {
+  clearInterval(qrTimer); qrTimer = null;
+  $('qrArea').style.display = 'none';
+  $('btnQrShow').style.display = '';
+  $('btnQrRetry').style.display = 'none';
+  $('otpRow').style.display = 'none';
+  $('otpBox').value = '';
+}
+function renderQr(url) {
+  const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
+  $('qrImg').innerHTML = qr.createSvgTag(4, 2);
+}
+async function startQr() {
+  if (window.__noQR || typeof qrcode === 'undefined') { toast(t('qrNoLib')); return; }
+  $('btnQrShow').style.display = 'none';
+  $('btnQrRetry').style.display = 'none';
+  $('otpRow').style.display = 'none';
+  $('qrArea').style.display = 'block';
+  $('qrMsg').textContent = t('loading');
+  try {
+    const r = await api('/api/cookie/qr', {});
+    try { renderQr(r.qrUrl); } catch (e) { toast(t('qrNoLib')); resetQrArea(); return; }
+    $('qrMsg').textContent = t('qrWaiting');
+    clearInterval(qrTimer);
+    qrTimer = setInterval(qrTick, 2000);
+  } catch (e) {
+    $('qrMsg').textContent = e.message;
+    $('btnQrRetry').style.display = '';
+  }
+}
+async function qrTick() {
+  let s;
+  try { s = await api('/api/cookie/qr/status'); } catch (e) { return; }
+  if (s.state === 'success') {
+    clearInterval(qrTimer); qrTimer = null;
+    toast(t('qrSuccess'));
+    try { updateCookieStatus(await api('/api/cookie')); } catch (e) {}
+    resetQrArea();
+  } else if (s.state === 'otp') {
+    $('otpRow').style.display = 'flex';
+    $('otpBox').focus();
+    $('qrMsg').textContent = t('qrOtp');
+  } else if (s.state === 'expired') {
+    clearInterval(qrTimer); qrTimer = null;
+    $('qrMsg').textContent = t('qrExpired');
+    $('btnQrRetry').style.display = '';
+  }
+}
+$('btnQrShow').onclick = startQr;
+$('btnQrRetry').onclick = startQr;
+$('btnOtpOk').onclick = async () => {
+  const v = $('otpBox').value.trim();
+  if (!v) return;
+  try {
+    await api('/api/cookie/qr/otp', { otp: v });
+    $('otpRow').style.display = 'none';
+    $('qrMsg').textContent = t('qrWaiting');
+  } catch (e) { toast(e.message); }
+};
+async function openCookieDialog() {
+  resetQrArea();
+  $('cookieMask').classList.add('show');
+  $('cookieBox').value = '';
+  $('cookieStatus').textContent = t('loading');
+  try {
+    const s = await api('/api/cookie');
+    updateCookieStatus(s);
+  } catch (e) {
+    $('cookieStatus').textContent = t('readFail') + e.message;
+  }
+}
+function updateCookieStatus(s) {
+  $('cookieStatus').textContent = s.configured ? t('cookieOn')(s.updatedAt) : t('cookieOff');
+}
+async function saveCookie() {
+  const v = $('cookieBox').value.trim();
+  if (!v) { toast(t('catNeed')); return; }
+  try {
+    const r = await api('/api/cookie', { cookie: v });
+    updateCookieStatus({ configured: true, updatedAt: r.updatedAt });
+    $('cookieBox').value = '';
+    toast(t('cookieSaved')(r.updatedAt));
+  } catch (e) { toast(t('cookieSaveFail') + e.message); }
+}
+async function clearCookie() {
+  if (!confirm(t('cookieClearQ'))) return;
+  try {
+    await fetch('/api/cookie', { method: 'DELETE' });
+    updateCookieStatus({ configured: false });
+    toast(t('cookieCleared'));
+  } catch (e) { toast(t('cookieSaveFail') + e.message); }
+}
+$('btnCookieSave').onclick = saveCookie;
+$('btnCookieClear').onclick = clearCookie;
+$('btnCookieCancel').onclick = () => $('cookieMask').classList.remove('show');
+$('cookieMask').addEventListener('click', e => { if (e.target === $('cookieMask')) $('cookieMask').classList.remove('show'); });
+
 // ---------- 基础菜单栏 ----------
 function closeMenus() { document.querySelectorAll('.menubar .menu.open').forEach(m => m.classList.remove('open')); }
 document.querySelectorAll('.menubar .menu').forEach(m => {
@@ -1082,6 +1236,7 @@ function menuAct(act) {
     case 'lang-en': if (curLang !== 'en') setLang('en'); break;
     case 'theme-day': setTheme('day'); break;
     case 'theme-night': setTheme('night'); break;
+    case 'cookie': openCookieDialog(); break;
     case 'keys': showInfo(t('keysTitle'), t('keysBody'));
       break;
     case 'about': showInfo(t('aboutTitle'), t('aboutBody'));
@@ -1107,6 +1262,7 @@ document.addEventListener('keydown', e => {
     closeMenus();
     $('infoMask').classList.remove('show');
     if ($('addMask').classList.contains('show')) $('addMask').classList.remove('show');
+    if ($('cookieMask').classList.contains('show')) $('cookieMask').classList.remove('show');
   }
 });
 window.addEventListener('beforeunload', e => { if (editing && dirty) { e.preventDefault(); e.returnValue = ''; } });
